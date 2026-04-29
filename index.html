@@ -3,182 +3,55 @@
 <head>
 <meta charset="utf-8"/>
 <meta name="viewport" content="width=device-width, initial-scale=1"/>
-<title>말하기 시험 자동 채점 보조</title>
+<title>말하기 시험 통합 평가 시스템</title>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
 <style>
-:root{--bg:#f6f7fb;--card:#fff;--text:#1f2937;--muted:#64748b;--blue:#2563eb;--red:#dc2626;--green:#16a34a;--line:#475569;--soft:#eff6ff}
-*{box-sizing:border-box}
-body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans KR",system-ui,sans-serif;line-height:1.45}
-.wrap{max-width:1180px;margin:auto;padding:16px}
-.header{text-align:center;margin-bottom:12px}.header h1{margin:0;font-size:26px}.header p{margin:4px 0 0;color:var(--muted);font-weight:800}
-.card{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 8px 20px rgba(0,0,0,.04)}
-.label{display:inline-block;background:var(--soft);border:1.5px solid #93c5fd;color:#1d4ed8;font-weight:900;border-radius:999px;padding:4px 10px;margin-bottom:8px;font-size:13px}
-.notice{border:2px solid #fb923c;background:#fff7ed;color:#9a3412;border-radius:14px;padding:10px 12px;margin-bottom:12px;font-size:14px}
-.info{border:2px solid #64748b;background:#f8fbff;border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:17px;font-weight:900}
-.promptBox,.timerArea,.scoreBox{border:2px solid #64748b;border-radius:14px;padding:14px;background:#fafafa;margin-bottom:12px}
-.promptTitle{display:inline-block;background:#eef2ff;border:1.5px solid #a5b4fc;color:#3730a3;font-weight:900;border-radius:999px;padding:4px 10px;margin-bottom:8px}
-.promptContent{min-height:150px}
-.waiting{border:1.5px dashed #94a3b8;background:#fff;border-radius:12px;min-height:150px;padding:18px;display:flex;align-items:center;font-weight:900;font-size:18px;color:#334155}
-.hidden{display:none!important}
-.prompt{font-size:20px;font-weight:900;white-space:pre-line}
-.tasks{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.taskItem{background:#fff;border:2px solid #cbd5e1;border-radius:12px;padding:12px;font-weight:900}
-.timerGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-.timerBox{border:2px solid #cbd5e1;border-radius:14px;background:#fff;text-align:center;padding:14px}
-.timerTitle{font-weight:900;color:var(--muted);font-size:16px}.time{font-size:50px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1}
-.active{outline:3px solid rgba(37,99,235,.25);border-color:var(--blue);background:#f8fbff}.recording{outline:3px solid rgba(220,38,38,.25);border-color:var(--red);background:#fff7f7}
-.done .time{color:var(--green)}.blink{animation:blink .75s infinite;color:var(--red)}@keyframes blink{50%{opacity:.25}}
-.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}button{border:0;border-radius:10px;background:var(--blue);color:white;font-weight:900;padding:11px 14px;cursor:pointer}button:hover{background:#1d4ed8}button.danger{background:var(--red)}button.gray{background:#475569}button:disabled{opacity:.45;cursor:not-allowed}
-.status{margin-top:10px;color:var(--muted);font-weight:800;font-size:14px}
-.teacherGrid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.field{margin-bottom:10px}.field label{display:block;font-weight:900;margin-bottom:4px}input,select,textarea{width:100%;border:1.5px solid #cbd5e1;border-radius:10px;padding:9px;font:inherit;background:#fff}textarea{min-height:160px;resize:vertical}
-.result{background:#f8fafc;border:2px solid #cbd5e1;border-radius:12px;padding:12px}.grade{font-size:30px;font-weight:900;color:#1d4ed8}.small{font-size:13px;color:#64748b}
-table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:14px}th{background:#f1f5f9}
-audio{width:100%;margin-top:8px}.download{display:inline-block;margin-top:8px;font-weight:900;color:#1d4ed8;text-decoration:none}
-@media(max-width:900px){.tasks,.teacherGrid,.timerGrid{grid-template-columns:1fr}.time{font-size:42px}.promptContent,.waiting{min-height:220px}}
+:root{--bg:#f6f7fb;--card:#fff;--text:#1f2937;--muted:#64748b;--blue:#2563eb;--red:#dc2626;--green:#16a34a;--line:#475569;--border:#cbd5e1;--soft:#eff6ff;--yellow:#fff7ed}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--text);font-family:"Noto Sans KR",system-ui,sans-serif;line-height:1.45}.wrap{max-width:1220px;margin:auto;padding:16px}.header{text-align:center;margin-bottom:12px}.header h1{margin:0;font-size:26px}.header p{margin:4px 0 0;color:var(--muted);font-weight:800}
+.card{background:var(--card);border:2px solid var(--line);border-radius:16px;padding:16px;margin-bottom:12px;box-shadow:0 8px 20px rgba(0,0,0,.04)}.label{display:inline-block;background:var(--soft);border:1.5px solid #93c5fd;color:#1d4ed8;font-weight:900;border-radius:999px;padding:4px 10px;margin-bottom:8px;font-size:13px}
+.info{border:2px solid #64748b;background:#f8fbff;border-radius:14px;padding:12px 14px;margin-bottom:12px;font-size:17px;font-weight:900}.promptBox,.timerArea,.scoreBox{border:2px solid #64748b;border-radius:14px;padding:14px;background:#fafafa;margin-bottom:12px}.promptTitle{display:inline-block;background:#eef2ff;border:1.5px solid #a5b4fc;color:#3730a3;font-weight:900;border-radius:999px;padding:4px 10px;margin-bottom:8px}
+.promptContent{min-height:150px}.waiting{border:1.5px dashed #94a3b8;background:#fff;border-radius:12px;min-height:150px;padding:18px;display:flex;align-items:center;font-weight:900;font-size:18px;color:#334155}.hidden{display:none!important}.prompt{font-size:20px;font-weight:900;white-space:pre-line}.tasks{margin-top:12px;display:grid;grid-template-columns:1fr 1fr;gap:10px}.taskItem{background:#fff;border:2px solid #cbd5e1;border-radius:12px;padding:12px;font-weight:900}
+.timerGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px}.timerBox{border:2px solid #cbd5e1;border-radius:14px;background:#fff;text-align:center;padding:14px;position:relative;min-height:132px}.timerTitle{font-weight:900;color:var(--muted);font-size:16px}.time{font-size:50px;font-weight:900;font-variant-numeric:tabular-nums;line-height:1.1}.active{outline:3px solid rgba(37,99,235,.25);border-color:var(--blue);background:#f8fbff}.recording{outline:3px solid rgba(220,38,38,.25);border-color:var(--red);background:#fff7f7}.done .time{color:var(--green)}.blink{animation:blink .75s infinite;color:var(--red)}@keyframes blink{50%{opacity:.25}}
+.submitInside{position:absolute;right:10px;bottom:10px;background:var(--green);padding:8px 11px;border-radius:9px;font-size:13px}.submitInside:hover{background:#15803d}.controls{display:flex;flex-wrap:wrap;gap:8px;margin-top:12px}button{border:0;border-radius:10px;background:var(--blue);color:white;font-weight:900;padding:11px 14px;cursor:pointer}button:hover{background:#1d4ed8}button.danger{background:var(--red)}button.gray{background:#475569}button.green{background:var(--green)}button:disabled{opacity:.45;cursor:not-allowed}
+.status{margin-top:10px;color:var(--muted);font-weight:800;font-size:14px}.notice{border:2px solid #fb923c;background:var(--yellow);color:#9a3412;border-radius:14px;padding:10px 12px;margin-bottom:12px;font-size:14px}.teacherGrid{display:grid;grid-template-columns:1fr 1.25fr;gap:12px}.field{margin-bottom:10px}.field label{display:block;font-weight:900;margin-bottom:4px}input,select,textarea{width:100%;border:1.5px solid #cbd5e1;border-radius:10px;padding:9px;font:inherit;background:#fff}textarea{min-height:150px;resize:vertical}.result{background:#f8fafc;border:2px solid #cbd5e1;border-radius:12px;padding:12px}.grade{font-size:30px;font-weight:900;color:#1d4ed8}.small{font-size:13px;color:#64748b}
+table{width:100%;border-collapse:collapse;margin-top:8px}th,td{border:1px solid #cbd5e1;padding:8px;text-align:left;font-size:14px}th{background:#f1f5f9}audio{width:100%;margin-top:8px}.download{display:inline-block;margin-top:8px;font-weight:900;color:#1d4ed8;text-decoration:none}.badge{display:inline-block;padding:2px 7px;border-radius:999px;background:#e2e8f0;font-weight:900;font-size:12px}.diff{font-weight:900}.diff.ok{color:var(--green)}.diff.warn{color:#d97706}.diff.bad{color:var(--red)}
+@media(max-width:950px){.tasks,.teacherGrid,.timerGrid{grid-template-columns:1fr}.time{font-size:42px}.promptContent,.waiting{min-height:220px}}
 </style>
 </head>
 <body>
 <main class="wrap">
-<section class="header">
-<h1>말하기 시험</h1>
-<p>생각하기 1분 30초 · 말하기 2분</p>
-</section>
-
-<section class="card">
-<span class="label">응시-학생</span>
-<div class="info">다음 질문에 대답하세요. 1분 30초 동안 생각하고, 2분 동안 말하세요.</div>
-
-<div class="promptBox">
-<div class="promptTitle">지시문</div>
-<div class="promptContent">
-<div id="waiting" class="waiting">아래의 ‘시험 시작’ 버튼을 누르면 질문을 볼 수 있고 시험이 시작됩니다.</div>
-<div id="question" class="hidden">
-<div class="prompt">최근 과학 기술의 발달로 인해 집에서 온라인으로 수업을 듣는 ‘비대면 교육’이 보편화되고 있습니다.
-비대면 교육은 장점도 많지만 단점도 적지 않습니다.</div>
-<div class="tasks">
-<div class="taskItem">1. 비대면 교육의 장단점을 대면 교육과 비교하여 설명하십시오.</div>
-<div class="taskItem">2. 개인적으로 어떤 방식을 선호하는지 말해 보십시오.</div>
-</div>
-</div>
-</div>
-</div>
-
-<div class="timerArea">
-<div class="timerGrid">
-<div id="prepBox" class="timerBox"><div id="prepTitle" class="timerTitle">생각하기</div><div id="prepTime" class="time">01:30</div></div>
-<div id="speakBox" class="timerBox"><div id="speakTitle" class="timerTitle">말하기</div><div id="speakTime" class="time">02:00</div></div>
-</div>
-<div class="controls">
-<button id="startBtn">시험 시작</button>
-<button id="resetBtn" class="danger">초기화</button>
-</div>
-<div id="examStatus" class="status">시험 시작 버튼을 누르면 마이크 허용 창이 뜨고 시험이 시작됩니다.</div>
-</div>
-</section>
-
-<section class="card">
-<span class="label">관리-교사</span>
-<div class="teacherGrid">
-<div>
-<div class="field"><label>응시자명</label><input id="candidateName" placeholder="예: 홍길동"/></div>
-<div id="recStatus" class="status">녹음 대기 중입니다.</div>
-<audio id="audio" controls class="hidden"></audio>
-<a id="download" class="download hidden">녹음 파일 다운로드</a>
-<div class="controls">
-<button id="aiBtn" class="gray" disabled>AI 보조 채점 실행</button>
-<button id="saveBtn" class="gray">결과 JSON 저장</button>
-</div>
-<div class="small">AI 채점은 Netlify Functions와 API 키가 설정된 경우에만 작동합니다. 작동하지 않아도 수동 채점과 등급 산출은 가능합니다.</div>
-</div>
-
-<div class="result">
-<div>최종 산출 등급</div>
-<div id="finalGrade" class="grade">-</div>
-<div id="totalScore" class="small">총점: -</div>
-<table>
-<tr><th>평가 요소</th><th>점수</th></tr>
-<tr><td>과제 수행</td><td><select id="taskScore"><option value="">선택</option><option value="3">3점</option><option value="2">2점</option><option value="1">1점</option></select></td></tr>
-<tr><td>언어</td><td><select id="langScore"><option value="">선택</option><option value="3">3점</option><option value="2">2점</option><option value="1">1점</option></select></td></tr>
-<tr><td>전달</td><td><select id="deliveryScore"><option value="">선택</option><option value="2">2점</option><option value="1">1점</option></select></td></tr>
-</table>
-</div>
-</div>
-
-<div class="scoreBox">
-<div class="label">AI 보조 채점 결과 / 교사 검토</div>
-<div class="field"><label>전사 텍스트</label><textarea id="transcript" placeholder="AI 전사 결과가 여기에 표시됩니다. 직접 입력해도 됩니다."></textarea></div>
-<div class="field"><label>채점 근거 및 피드백</label><textarea id="feedback" placeholder="AI 추천 근거 또는 교사 메모"></textarea></div>
-<table>
-<tr><th>점수 조합</th><th>최종 등급</th></tr>
-<tr><td>총점 7~8</td><td>7급</td></tr>
-<tr><td>총점 6</td><td>6급</td></tr>
-<tr><td>총점 5</td><td>5급</td></tr>
-<tr><td>총점 3~4</td><td>4급</td></tr>
-</table>
-</div>
-</section>
-
-<section class="notice">※ 자동 다운로드와 AI 호출은 브라우저·배포 환경에 따라 차단될 수 있습니다. AI 결과는 최종 판정이 아니라 교사 검토용 추천값입니다.</section>
+<section class="header"><h1>말하기 시험 통합 평가 시스템</h1><p>생각하기 1분 30초 · 말하기 2분 · 직접 녹음 / 파일 업로드 평가 가능</p></section>
+<section class="card"><span class="label">응시-학생</span><div class="info">다음 질문에 대답하세요. 1분 30초 동안 생각하고, 2분 동안 말하세요.</div>
+<div class="promptBox"><div class="promptTitle">지시문</div><div class="promptContent"><div id="waiting" class="waiting">아래의 ‘시험 시작’ 버튼을 누르면 질문을 볼 수 있고 시험이 시작됩니다.</div><div id="question" class="hidden"><div class="prompt">최근 과학 기술의 발달로 인해 집에서 온라인으로 수업을 듣는 ‘비대면 교육’이 보편화되고 있습니다.
+비대면 교육은 장점도 많지만 단점도 적지 않습니다.</div><div class="tasks"><div class="taskItem">1. 비대면 교육의 장단점을 대면 교육과 비교하여 설명하십시오.</div><div class="taskItem">2. 개인적으로 어떤 방식을 선호하는지 말해 보십시오.</div></div></div></div></div>
+<div class="timerArea"><div class="timerGrid"><div id="prepBox" class="timerBox"><div id="prepTitle" class="timerTitle">생각하기</div><div id="prepTime" class="time">01:30</div></div><div id="speakBox" class="timerBox"><div id="speakTitle" class="timerTitle">말하기</div><div id="speakTime" class="time">02:00</div><button id="submitBtn" class="submitInside" disabled>제출</button></div></div><div class="controls"><button id="startBtn">시험 시작</button><button id="resetBtn" class="danger">초기화</button></div><div id="examStatus" class="status">시험 시작 버튼을 누르면 마이크 허용 창이 뜨고 시험이 시작됩니다.</div></div></section>
+<section class="card"><span class="label">관리-교사</span><div class="teacherGrid"><div><div class="field"><label>응시자명</label><input id="candidateName" placeholder="예: 홍길동"/></div><div class="field"><label>기존 녹음 파일 업로드</label><input id="fileInput" type="file" accept="audio/*,.webm,.mp3,.wav,.m4a,.ogg"/><div class="small">업로드 파일을 선택하면 직접 녹음 없이도 AI 보조 채점을 실행할 수 있습니다.</div></div><div id="recStatus" class="status">녹음 또는 파일 업로드 대기 중입니다.</div><audio id="audio" controls class="hidden"></audio><a id="download" class="download hidden">녹음 파일 다운로드</a><div class="controls"><button id="aiBtn" class="gray" disabled>AI 보조 채점 실행</button><button id="copyAiToTeacher" class="gray" disabled>AI 점수를 교사 평가로 복사</button><button id="confirmBtn" class="green">교사 평가를 최종 확정</button><button id="excelBtn" class="gray">결과 엑셀 저장</button><button id="jsonBtn" class="gray">결과 JSON 저장</button></div><div class="small">AI 보조 채점은 OpenAI API 키와 Netlify Functions가 정상 설정된 경우 작동합니다.</div></div>
+<div class="result"><div>최종 확정 등급</div><div id="finalGrade" class="grade">-</div><div id="finalTotal" class="small">최종 총점: -</div><table><tr><th>구분</th><th>과제 수행</th><th>언어</th><th>전달</th><th>총점</th><th>등급</th></tr><tr><td><span class="badge">AI 추천</span></td><td id="aiTask">-</td><td id="aiLang">-</td><td id="aiDeliv">-</td><td id="aiTotal">-</td><td id="aiGrade">-</td></tr><tr><td><span class="badge">교사 평가</span></td><td><select id="teacherTask"><option value="">-</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></td><td><select id="teacherLang"><option value="">-</option><option value="3">3</option><option value="2">2</option><option value="1">1</option></select></td><td><select id="teacherDeliv"><option value="">-</option><option value="2">2</option><option value="1">1</option></select></td><td id="teacherTotal">-</td><td id="teacherGrade">-</td></tr><tr><td><span class="badge">차이</span></td><td id="diffTask">-</td><td id="diffLang">-</td><td id="diffDeliv">-</td><td id="diffTotal">-</td><td id="diffGrade">-</td></tr></table></div></div>
+<div class="scoreBox"><div class="label">AI 보조 채점 결과 / 교사 검토</div><div class="field"><label>전사 텍스트</label><textarea id="transcript" placeholder="AI 전사 결과가 여기에 표시됩니다. 직접 입력해도 됩니다."></textarea></div><div class="field"><label>AI 채점 근거 및 피드백</label><textarea id="feedback" placeholder="AI 추천 근거"></textarea></div><div class="field"><label>교사 메모</label><textarea id="teacherMemo" placeholder="최종 판정 근거, 수정 이유, 사후 검토 내용 등을 입력하십시오."></textarea></div></div></section>
+<section class="notice">※ ‘제출’은 취소가 아니라 “현재까지 녹음한 답안을 제출”하는 기능입니다. 제출하면 녹음이 즉시 종료되고 평가 가능한 파일이 생성됩니다.</section>
 </main>
-
 <script>
-const prepTotal=90,speakTotal=120;
-let prep=prepTotal,speak=speakTotal,timer=null,phase="idle";
-let stream=null,recorder=null,chunks=[],recordedBlob=null;
-
-const $=id=>document.getElementById(id);
-function fmt(t){return String(Math.floor(t/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0")}
-function render(){
-$("prepTime").textContent=fmt(prep);$("speakTime").textContent=fmt(speak);
-$("prepBox").classList.toggle("active",phase==="prep");$("speakBox").classList.toggle("active",phase==="speak");
-$("speakBox").classList.toggle("recording",phase==="speak");
-$("prepTitle").classList.toggle("blink",phase==="prep");$("speakTitle").classList.toggle("blink",phase==="speak");
-$("prepBox").classList.toggle("done",prep===0);$("speakBox").classList.toggle("done",speak===0);
-}
-function beep(){try{const c=new (AudioContext||webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.setValueAtTime(.08,c.currentTime);o.start();o.stop(c.currentTime+.25)}catch(e){}}
-function cleanName(){return ($("candidateName").value||"noname").replace(/[^\w가-힣-]/g,"_")}
-function fileName(){const d=new Date(),p=n=>String(n).padStart(2,"0");return `speaking_${cleanName()}_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.webm`}
-async function startExam(){
-try{
-$("startBtn").disabled=true;$("waiting").classList.add("hidden");$("question").classList.remove("hidden");
-$("examStatus").textContent="마이크 권한을 허용해 주십시오.";$("recStatus").textContent="마이크 권한 확인 중입니다.";
-stream=await navigator.mediaDevices.getUserMedia({audio:true});
-chunks=[];recordedBlob=null;recorder=new MediaRecorder(stream);
-recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data)};
-recorder.onstop=()=>{recordedBlob=new Blob(chunks,{type:"audio/webm"});const url=URL.createObjectURL(recordedBlob),fn=fileName();$("audio").src=url;$("audio").classList.remove("hidden");$("download").href=url;$("download").download=fn;$("download").textContent="녹음 파일 다운로드";$("download").classList.remove("hidden");$("aiBtn").disabled=false;$("recStatus").textContent="녹음이 완료되었습니다. 자동 다운로드를 시도했습니다.";try{const a=document.createElement("a");a.href=url;a.download=fn;document.body.appendChild(a);a.click();a.remove()}catch(e){} if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}};
-$("recStatus").textContent="마이크가 준비되었습니다. 말하기 시간이 시작되면 자동으로 녹음됩니다.";
-startPrep();
-}catch(e){$("startBtn").disabled=false;$("waiting").classList.remove("hidden");$("question").classList.add("hidden");$("examStatus").textContent="마이크 권한을 허용해야 시험을 시작할 수 있습니다.";}}
+const prepTotal=90,speakTotal=120;let prep=prepTotal,speak=speakTotal,timer=null,phase="idle";let stream=null,recorder=null,chunks=[],currentBlob=null,currentFileName="";let aiScores={task:"",lang:"",deliv:"",total:"",grade:""};let finalScores={task:"",lang:"",deliv:"",total:"",grade:""};const $=id=>document.getElementById(id);
+function fmt(t){return String(Math.floor(t/60)).padStart(2,"0")+":"+String(t%60).padStart(2,"0")}function gradeFromTotal(sum){if(!sum&&sum!==0)return "-";if(sum>=7)return"7급";if(sum===6)return"6급";if(sum===5)return"5급";return"4급"}function cleanName(){return($("candidateName").value||"noname").replace(/[^\w가-힣-]/g,"_")}function fileName(ext="webm"){const d=new Date(),p=n=>String(n).padStart(2,"0");return `speaking_${cleanName()}_${d.getFullYear()}${p(d.getMonth()+1)}${p(d.getDate())}_${p(d.getHours())}${p(d.getMinutes())}${p(d.getSeconds())}.${ext}`}
+function render(){$("prepTime").textContent=fmt(prep);$("speakTime").textContent=fmt(speak);$("prepBox").classList.toggle("active",phase==="prep");$("speakBox").classList.toggle("active",phase==="speak");$("speakBox").classList.toggle("recording",phase==="speak");$("prepTitle").classList.toggle("blink",phase==="prep");$("speakTitle").classList.toggle("blink",phase==="speak");$("prepBox").classList.toggle("done",prep===0);$("speakBox").classList.toggle("done",speak===0);$("submitBtn").disabled=phase!=="speak"}
+function beep(){try{const c=new(AudioContext||webkitAudioContext)(),o=c.createOscillator(),g=c.createGain();o.connect(g);g.connect(c.destination);o.frequency.value=880;g.gain.setValueAtTime(.08,c.currentTime);o.start();o.stop(c.currentTime+.25)}catch(e){}}
+function setAudioBlob(blob,name){currentBlob=blob;currentFileName=name||fileName("webm");const url=URL.createObjectURL(blob);$("audio").src=url;$("audio").classList.remove("hidden");$("download").href=url;$("download").download=currentFileName;$("download").textContent="녹음 파일 다운로드";$("download").classList.remove("hidden");$("aiBtn").disabled=false}
+async function startExam(){try{$("startBtn").disabled=true;$("waiting").classList.add("hidden");$("question").classList.remove("hidden");$("examStatus").textContent="마이크 권한을 허용해 주십시오.";$("recStatus").textContent="마이크 권한 확인 중입니다.";stream=await navigator.mediaDevices.getUserMedia({audio:true});chunks=[];currentBlob=null;currentFileName="";recorder=new MediaRecorder(stream);recorder.ondataavailable=e=>{if(e.data&&e.data.size>0)chunks.push(e.data)};recorder.onstop=()=>{const blob=new Blob(chunks,{type:"audio/webm"});setAudioBlob(blob,fileName("webm"));$("recStatus").textContent="녹음이 완료되었습니다. 자동 다운로드를 시도했습니다.";try{const a=document.createElement("a");a.href=$("download").href;a.download=currentFileName;document.body.appendChild(a);a.click();a.remove()}catch(e){}if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}};$("recStatus").textContent="마이크가 준비되었습니다. 말하기 시간이 시작되면 자동으로 녹음됩니다.";startPrep()}catch(e){$("startBtn").disabled=false;$("waiting").classList.remove("hidden");$("question").classList.add("hidden");$("examStatus").textContent="마이크 권한을 허용해야 시험을 시작할 수 있습니다."}}
 function startPrep(){clearInterval(timer);phase="prep";$("examStatus").textContent="생각하기 시간입니다. 답변 내용을 준비하십시오.";render();timer=setInterval(()=>{prep--;render();if(prep<=0){clearInterval(timer);beep();startSpeak()}},1000)}
-function startSpeak(){clearInterval(timer);phase="speak";$("examStatus").textContent="말하기 시간입니다. 답변을 시작하십시오.";$("recStatus").textContent="녹음 중입니다.";render();recorder.start();timer=setInterval(()=>{speak--;render();if(speak<=0){clearInterval(timer);phase="done";beep();render();if(recorder&&recorder.state!=="inactive")recorder.stop();$("examStatus").textContent="시험이 종료되었습니다."}},1000)}
-function resetAll(){clearInterval(timer);if(recorder&&recorder.state!=="inactive"){try{recorder.stop()}catch(e){}}if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}prep=prepTotal;speak=speakTotal;phase="idle";chunks=[];recordedBlob=null;recorder=null;$("startBtn").disabled=false;$("aiBtn").disabled=true;$("waiting").classList.remove("hidden");$("question").classList.add("hidden");$("examStatus").textContent="시험 시작 버튼을 누르면 마이크 허용 창이 뜨고 시험이 시작됩니다.";$("recStatus").textContent="녹음 대기 중입니다.";$("audio").classList.add("hidden");$("download").classList.add("hidden");render()}
-function calculateGrade(){
-const t=+$("taskScore").value,l=+$("langScore").value,d=+$("deliveryScore").value;
-if(!t||!l||!d){$("finalGrade").textContent="-";$("totalScore").textContent="총점: -";return}
-const sum=t+l+d;let grade=sum>=7?"7급":sum===6?"6급":sum===5?"5급":"4급";
-$("finalGrade").textContent=grade;$("totalScore").textContent=`총점: ${sum}점`;
-}
-["taskScore","langScore","deliveryScore"].forEach(id=>$(id).addEventListener("change",calculateGrade));
+function startSpeak(){clearInterval(timer);phase="speak";$("examStatus").textContent="말하기 시간입니다. 답변을 시작하십시오. 답변을 마치면 제출 버튼을 누를 수 있습니다.";$("recStatus").textContent="녹음 중입니다.";render();try{recorder.start()}catch(e){$("recStatus").textContent="녹음을 시작할 수 없습니다.";return}timer=setInterval(()=>{speak--;render();if(speak<=0){finishSubmission("시간이 종료되어 제출되었습니다.")}},1000)}
+function finishSubmission(message){clearInterval(timer);phase="done";beep();render();$("examStatus").textContent=message||"제출되었습니다.";if(recorder&&recorder.state!=="inactive"){recorder.stop()}}
+function resetAll(){clearInterval(timer);if(recorder&&recorder.state!=="inactive"){try{recorder.stop()}catch(e){}}if(stream){stream.getTracks().forEach(t=>t.stop());stream=null}prep=prepTotal;speak=speakTotal;phase="idle";chunks=[];currentBlob=null;currentFileName="";recorder=null;$("startBtn").disabled=false;$("aiBtn").disabled=true;$("copyAiToTeacher").disabled=true;$("waiting").classList.remove("hidden");$("question").classList.add("hidden");$("examStatus").textContent="시험 시작 버튼을 누르면 마이크 허용 창이 뜨고 시험이 시작됩니다.";$("recStatus").textContent="녹음 또는 파일 업로드 대기 중입니다.";$("audio").classList.add("hidden");$("download").classList.add("hidden");$("fileInput").value="";render()}
+function teacherCalc(){const t=+$("teacherTask").value,l=+$("teacherLang").value,d=+$("teacherDeliv").value;if(!t||!l||!d){$("teacherTotal").textContent="-";$("teacherGrade").textContent="-";updateDiff();return null}const total=t+l+d,grade=gradeFromTotal(total);$("teacherTotal").textContent=total;$("teacherGrade").textContent=grade;updateDiff();return{task:t,lang:l,deliv:d,total,grade}}
+function setAi(data){aiScores={task:data.taskScore||"",lang:data.languageScore||"",deliv:data.deliveryScore||"",total:data.total||((+data.taskScore||0)+(+data.languageScore||0)+(+data.deliveryScore||0)),grade:data.grade||gradeFromTotal((+data.taskScore||0)+(+data.languageScore||0)+(+data.deliveryScore||0))};$("aiTask").textContent=aiScores.task||"-";$("aiLang").textContent=aiScores.lang||"-";$("aiDeliv").textContent=aiScores.deliv||"-";$("aiTotal").textContent=aiScores.total||"-";$("aiGrade").textContent=aiScores.grade||"-";$("copyAiToTeacher").disabled=false;updateDiff()}
+function diffCell(id,a,b){const el=$(id);if(a===""||b===""||a==="-"||b==="-"){el.textContent="-";el.className="diff";return}const diff=(+b)-(+a);el.textContent=diff===0?"일치":(diff>0?`교사 +${diff}`:`교사 ${diff}`);el.className="diff "+(diff===0?"ok":Math.abs(diff)===1?"warn":"bad")}
+function updateDiff(){const t=$("teacherTask").value,l=$("teacherLang").value,d=$("teacherDeliv").value,total=$("teacherTotal").textContent,grade=$("teacherGrade").textContent;diffCell("diffTask",aiScores.task,t);diffCell("diffLang",aiScores.lang,l);diffCell("diffDeliv",aiScores.deliv,d);diffCell("diffTotal",aiScores.total,total);$("diffGrade").textContent=(aiScores.grade&&grade&&grade!=="-")?(aiScores.grade===grade?"일치":`${aiScores.grade} → ${grade}`):"-"}
+function confirmFinal(){const t=teacherCalc();if(!t){alert("교사 평가 점수를 모두 선택해야 최종 확정할 수 있습니다.");return}finalScores=t;$("finalGrade").textContent=t.grade;$("finalTotal").textContent=`최종 총점: ${t.total}점`}
+["teacherTask","teacherLang","teacherDeliv"].forEach(id=>$(id).addEventListener("change",teacherCalc));$("fileInput").addEventListener("change",e=>{const file=e.target.files[0];if(!file)return;setAudioBlob(file,file.name);$("recStatus").textContent=`업로드 파일 선택 완료: ${file.name}`});
 async function blobToBase64(blob){return new Promise((res,rej)=>{const r=new FileReader();r.onload=()=>res(String(r.result).split(",")[1]);r.onerror=rej;r.readAsDataURL(blob)})}
-$("aiBtn").onclick=async()=>{
-if(!recordedBlob){alert("녹음 파일이 없습니다.");return}
-$("recStatus").textContent="AI 보조 채점 중입니다.";
-try{
-const audioBase64=await blobToBase64(recordedBlob);
-const r=await fetch("/.netlify/functions/score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({candidateName:$("candidateName").value,audioBase64,mimeType:"audio/webm"})});
-const data=await r.json(); if(!r.ok) throw new Error(data.error||"AI 호출 실패");
-$("transcript").value=data.transcript||"";
-$("feedback").value=[data.summary,data.taskEvidence,data.languageEvidence,data.deliveryEvidence,data.cautions].filter(Boolean).join("\\n\\n");
-if(data.taskScore)$("taskScore").value=String(data.taskScore);
-if(data.languageScore)$("langScore").value=String(data.languageScore);
-if(data.deliveryScore)$("deliveryScore").value=String(data.deliveryScore);
-calculateGrade();$("recStatus").textContent="AI 보조 채점이 완료되었습니다. 교사가 검토해 확정하십시오.";
-}catch(e){$("recStatus").textContent="AI 보조 채점 실패: "+e.message}
-};
-$("saveBtn").onclick=()=>{
-const data={candidateName:$("candidateName").value,transcript:$("transcript").value,feedback:$("feedback").value,taskScore:$("taskScore").value,languageScore:$("langScore").value,deliveryScore:$("deliveryScore").value,total:$("totalScore").textContent,grade:$("finalGrade").textContent,createdAt:new Date().toISOString()};
-const blob=new Blob([JSON.stringify(data,null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`score_${cleanName()}.json`;a.click();URL.revokeObjectURL(url);
-};
-$("startBtn").addEventListener("click",startExam);$("resetBtn").addEventListener("click",resetAll);render();
+$("aiBtn").onclick=async()=>{if(!currentBlob){alert("녹음 파일 또는 업로드 파일이 없습니다.");return}$("recStatus").textContent="AI 보조 채점 중입니다.";try{const audioBase64=await blobToBase64(currentBlob);const r=await fetch("/.netlify/functions/score",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({candidateName:$("candidateName").value,audioBase64,mimeType:currentBlob.type||"audio/webm"})});const data=await r.json();if(!r.ok)throw new Error(data.error||"AI 호출 실패");$("transcript").value=data.transcript||"";$("feedback").value=[data.summary,data.taskEvidence,data.languageEvidence,data.deliveryEvidence,data.cautions].filter(Boolean).join("\n\n");setAi(data);$("recStatus").textContent="AI 보조 채점이 완료되었습니다. 교사가 검토해 확정하십시오."}catch(e){$("recStatus").textContent="AI 보조 채점 실패: "+e.message}};
+$("copyAiToTeacher").onclick=()=>{if(aiScores.task)$("teacherTask").value=aiScores.task;if(aiScores.lang)$("teacherLang").value=aiScores.lang;if(aiScores.deliv)$("teacherDeliv").value=aiScores.deliv;teacherCalc()};
+function makeResultObject(){const teacher=teacherCalc()||{};return{응시자명:$("candidateName").value,녹음파일명:currentFileName,전사:$("transcript").value,AI_과제수행:aiScores.task,AI_언어:aiScores.lang,AI_전달:aiScores.deliv,AI_총점:aiScores.total,AI_등급:aiScores.grade,교사_과제수행:teacher.task||"",교사_언어:teacher.lang||"",교사_전달:teacher.deliv||"",교사_총점:teacher.total||"",교사_등급:teacher.grade||"",최종_과제수행:finalScores.task||teacher.task||"",최종_언어:finalScores.lang||teacher.lang||"",최종_전달:finalScores.deliv||teacher.deliv||"",최종_총점:finalScores.total||teacher.total||"",최종_등급:finalScores.grade||teacher.grade||"",AI피드백:$("feedback").value,교사메모:$("teacherMemo").value,저장시각:new Date().toISOString()}}
+$("excelBtn").onclick=()=>{const ws=XLSX.utils.json_to_sheet([makeResultObject()]);const wb=XLSX.utils.book_new();XLSX.utils.book_append_sheet(wb,ws,"말하기평가결과");XLSX.writeFile(wb,`speaking_result_${cleanName()}.xlsx`)};$("jsonBtn").onclick=()=>{const blob=new Blob([JSON.stringify(makeResultObject(),null,2)],{type:"application/json"});const url=URL.createObjectURL(blob);const a=document.createElement("a");a.href=url;a.download=`speaking_result_${cleanName()}.json`;a.click();URL.revokeObjectURL(url)};
+$("confirmBtn").onclick=confirmFinal;$("startBtn").addEventListener("click",startExam);$("resetBtn").addEventListener("click",resetAll);$("submitBtn").addEventListener("click",()=>finishSubmission("응시자가 제출했습니다. 현재까지 녹음된 답안이 저장되었습니다."));render();
 </script>
-</body>
-</html>
+</body></html>

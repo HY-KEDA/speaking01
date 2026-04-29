@@ -1,6 +1,6 @@
 {
-  "name": "speaking-test-ai-scoring",
-  "version": "1.0.0",
+  "name": "speaking-test-integrated-final",
+  "version": "3.0.0",
   "type": "module",
   "scripts": {
     "dev": "netlify dev",
