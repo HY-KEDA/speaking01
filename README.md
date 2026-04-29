@@ -16,3 +16,8 @@
 2. GitHub speaking01 저장소의 기존 파일을 이 파일들로 교체합니다.
 3. Netlify에서 Deploys → Trigger deploy → Deploy project를 누릅니다.
 4. 환경변수는 기존 값을 유지합니다.
+
+
+## 수정 사항
+- 업로드/녹음 파일을 OpenAI 전사 API로 보낼 때 파일 확장자가 유지되도록 수정했습니다.
+- webm, mp3, wav, m4a, ogg 형식 인식을 보완했습니다.

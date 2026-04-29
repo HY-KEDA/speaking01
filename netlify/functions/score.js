@@ -16,7 +16,20 @@ export async function handler(event) {
       return { statusCode: 400, headers: {"Content-Type":"application/json"}, body: JSON.stringify({ error: "audioBase64가 없습니다." }) };
     }
     const audioBuffer = Buffer.from(body.audioBase64, "base64");
-    const audioFile = await toFile(audioBuffer, "speaking_audio", { type: body.mimeType || "audio/webm" });
+    const mimeType = body.mimeType || "audio/webm";
+
+    function extensionFromMime(type) {
+      if (!type) return "webm";
+      if (type.includes("mpeg") || type.includes("mp3")) return "mp3";
+      if (type.includes("wav")) return "wav";
+      if (type.includes("mp4") || type.includes("m4a")) return "m4a";
+      if (type.includes("ogg")) return "ogg";
+      if (type.includes("webm")) return "webm";
+      return "webm";
+    }
+
+    const ext = extensionFromMime(mimeType);
+    const audioFile = await toFile(audioBuffer, `speaking_audio.${ext}`, { type: mimeType });
 
     const transcription = await client.audio.transcriptions.create({
       file: audioFile,
