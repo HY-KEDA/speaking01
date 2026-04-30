@@ -29,3 +29,8 @@
    - OPENAI_API_KEY
    - TRANSCRIBE_MODEL = gpt-4o-transcribe
    - SCORE_MODEL = gpt-4o-mini
+
+
+## 추가 수정 사항
+- AI 채점 근거 및 피드백에 과제 수행 3개, 표현 3개, 전달 2개 상위요소별 O/△/X 판단과 근거를 표시합니다.
+- 엑셀/JSON 저장에도 상위요소별 AI 판단값을 포함합니다.
