@@ -1,6 +1,6 @@
 {
-  "name": "speaking-test-final-time-fixed",
-  "version": "5.0.0",
+  "name": "speaking-test-netlify-fixed",
+  "version": "6.0.0",
   "type": "module",
   "scripts": {
     "build": "echo static"

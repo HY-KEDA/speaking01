@@ -1,18 +1,18 @@
-# 말하기 시험 통합 평가 시스템 - 최종 시간 수정판
+# 말하기 시험 통합 평가 시스템 - Netlify 배포 오류 수정판
 
-## 반영 내용
-- 생각하기 시간: 2분
-- 말하기 시간: 3분
-- 기존 완성 기능 유지
-- lastAiResult 중복 선언 오류 수정
-- 상위요소별 1점 / 0.5점 / 0점 출력
-- AI 보조 채점, 파일 업로드, 제출, 엑셀/JSON 저장 유지
+## 중요
+Netlify 환경변수에는 `OPENAI_API_KEY`만 필요합니다.
 
-## 배포
-ZIP 압축을 풀어 GitHub 저장소에 업로드한 뒤 Netlify에서 Deploys → Trigger deploy → Deploy project를 실행하세요.
+삭제해도 되는 환경변수:
+- SCORE_MODEL
+- TRANSCRIBE_MODEL
 
+## 수정 이유
+Netlify가 `SCORE_MODEL`, `TRANSCRIBE_MODEL` 값을 node_modules 안에서 발견해 비밀값 노출로 오인하는 문제가 있어, 모델명 환경변수 사용을 제거했습니다.
 
-## v2 수정
-- AI 응답 필드명이 달라도 상위요소 점수를 1/0.5/0으로 보정해 표시합니다.
-- 피드백 영역을 크게 늘려 교사 검토 사항이 끊겨 보이지 않게 했습니다.
-- 엑셀/JSON 저장에 상위요소별 점수와 근거를 포함합니다.
+## 배포 방법
+1. ZIP 압축을 풉니다.
+2. GitHub 저장소에 압축을 푼 파일 전체를 업로드합니다.
+3. Netlify 환경변수에서 `OPENAI_API_KEY`만 설정합니다.
+4. `SCORE_MODEL`, `TRANSCRIBE_MODEL`이 있다면 삭제합니다.
+5. Deploys → Trigger deploy → Deploy site를 실행합니다.

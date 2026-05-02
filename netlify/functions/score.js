@@ -3,6 +3,11 @@ import { toFile } from "openai/uploads";
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+// 모델명은 환경변수로 두지 않습니다.
+// Netlify가 SCORE_MODEL, TRANSCRIBE_MODEL 값을 node_modules에서 발견해 비밀값 노출로 오인하는 문제를 피하기 위함입니다.
+const TRANSCRIBE_MODEL = "gpt-4o-mini-transcribe";
+const SCORE_MODEL = "gpt-4o-mini";
+
 function areaScoreFromRaw(raw) {
   const n = Number(raw || 0);
   if (n >= 2.5) return 3;
@@ -52,12 +57,11 @@ export async function handler(event) {
       return "webm";
     }
 
-    const ext = extensionFromMime(mimeType);
-    const audioFile = await toFile(audioBuffer, `speaking_audio.${ext}`, { type: mimeType });
+    const audioFile = await toFile(audioBuffer, `speaking_audio.${extensionFromMime(mimeType)}`, { type: mimeType });
 
     const transcription = await client.audio.transcriptions.create({
       file: audioFile,
-      model: process.env.TRANSCRIBE_MODEL || "gpt-4o-transcribe",
+      model: TRANSCRIBE_MODEL,
       language: "ko"
     });
 
@@ -132,7 +136,8 @@ export async function handler(event) {
 ${transcript}
 
 [출력 규칙]
-각 상위요소 점수는 반드시 1, 0.5, 0 중 하나로 반환한다. 모든 상위요소의 Score와 Reason 필드를 빠짐없이 채운다.
+각 상위요소 점수는 반드시 1, 0.5, 0 중 하나로 반환한다.
+모든 상위요소의 Score와 Reason 필드를 빠짐없이 채운다.
 O, △, X 문자는 절대 사용하지 않는다.
 반드시 JSON만 반환한다.
 
@@ -162,7 +167,7 @@ O, △, X 문자는 절대 사용하지 않는다.
 `;
 
     const response = await client.responses.create({
-      model: process.env.SCORE_MODEL || "gpt-4o-mini",
+      model: SCORE_MODEL,
       input: prompt,
       text: { format: { type: "json_object" } }
     });
