@@ -3,6 +3,28 @@ import { toFile } from "openai/uploads";
 
 const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
 
+function areaScoreFromRaw(raw) {
+  const n = Number(raw || 0);
+  if (n >= 2.5) return 3;
+  if (n >= 1.5) return 2;
+  if (n >= 0.5) return 1;
+  return 0;
+}
+
+function deliveryScoreFromRaw(raw) {
+  const n = Number(raw || 0);
+  if (n >= 1.5) return 2;
+  if (n >= 0.5) return 1;
+  return 0;
+}
+
+function gradeFromTotal(total) {
+  if (total >= 7) return "7급";
+  if (total === 6) return "6급";
+  if (total === 5) return "5급";
+  return "4급";
+}
+
 export async function handler(event) {
   try {
     if (event.httpMethod !== "POST") {
@@ -42,131 +64,100 @@ export async function handler(event) {
     const transcript = transcription.text || "";
 
     const prompt = `
-너는 한국어 말하기 평가 보조 채점자다. 아래 전사와 평가 기준을 바탕으로 교사 검토용 점수를 추천한다.
+너는 한국어 말하기 평가 보조 채점자다. 아래 전사와 평가 기준을 바탕으로 점수를 추천한다.
 최종 판정자는 교사이므로, 너는 점수와 근거를 일관되게 제안해야 한다.
 
-[문항 정보]
-측정 목표 등급: 고급(5~6급)
-기능: 설명하기, 의견 말하기
-문항 구조:
-- 문장1: 주제 도입 및 상황 설명
-- 문장2: 내용의 범위 및 방향 제시
-- 문장3: 과제 제시
-
-[지시문]
-다음 질문에 대답하세요. 1분 30초 동안 생각하고, 2분 동안 말하세요.
-
-[과제]
+[문항]
 최근 과학 기술의 발달로 인해 집에서 온라인으로 수업을 듣는 '비대면 교육'이 보편화되고 있습니다.
 비대면 교육은 장점도 많지만 단점도 적지 않습니다.
 1. 비대면 교육의 장단점을 대면 교육과 비교하여 설명하십시오.
 2. 개인적으로 어떤 방식을 선호하는지 말해 보십시오.
 
-[채점 영역과 점수]
-과제 수행: 0~3점
-표현: 0~3점
-전달: 0~2점
-총점: 과제 수행 + 표현 + 전달
-등급 산출:
-- 7~8점 = 7급
-- 6점 = 6급
-- 5점 = 5급
-- 0~4점 = 4급
+[점수 체계]
+과제 수행: 상위요소 3개, 각 1점/0.5점/0점.
+표현: 상위요소 3개, 각 1점/0.5점/0점.
+전달: 상위요소 2개, 각 1점/0.5점/0점.
 
-==================================================
-[채점 기준 - 과제 수행]
-상위요소 1: 대면 교육과 비교하여 비대면 교육의 장점 설명하기
-- 세부요소 1) 특정 관점(시간 및 공간의 제약 극복, 편의성 등)에서 비대면 교육의 장점을 제시했는가
-- 세부요소 2) 대면 교육과 비대면 교육을 직접 언급하고 '~와/과 달리, ~보다, 반면에, ~에 비해' 등 비교 표현을 1회 이상 사용하여 차이 또는 대조를 명시적으로 드러냈는가
-판정: O=세부요소 1과 2 모두 충족, △=둘 중 하나만 충족, X=수행 없음
+[환산]
+과제 수행/표현: 원점수 2.5~3점=3점, 1.5~2점=2점, 0.5~1점=1점, 0점=0점.
+전달: 원점수 1.5~2점=2점, 0.5~1점=1점, 0점=0점.
+총점 7~8점=7급, 6점=6급, 5점=5급, 0~4점=4급.
 
-상위요소 2: 대면 교육과 비교하여 비대면 교육의 단점 설명하기
-- 세부요소 1) 특정 관점(상호작용의 한계, 기자재 준비 등)에서 비대면 교육의 단점을 제시했는가
-- 세부요소 2) 대면 교육과 비대면 교육을 직접 언급하고 '~와/과 달리, ~보다, 반면에, ~에 비해' 등 비교 표현을 1회 이상 사용하여 차이 또는 대조를 명시적으로 드러냈는가
-판정: O=세부요소 1과 2 모두 충족, △=둘 중 하나만 충족, X=수행 없음
+[과제 수행]
+상위요소 1. 대면 교육과 비교하여 비대면 교육의 장점 설명하기
+- 1점: 특정 관점에서 비대면 교육 장점을 제시하고, '대면 교육'과 '비대면 교육' 또는 이에 준하는 명시적 표현을 언급하며, 비교 표현으로 차이·대조를 드러냄.
+- 0.5점: 위 세부요소 중 한 가지만 충족함.
+- 0점: 모두 불충족.
 
-상위요소 3: 자신이 선호하는 교육 방법에 대한 의견 제시하기
-- 세부요소 1) 대면 교육 또는 비대면 교육 중 하나를 명시적으로 선택하고 '나는 ~을 선호한다, ~이/가 더 좋다, ~을/를 선택하겠다' 등 선호 표현을 사용하여 입장을 분명하게 드러냈는가
-- 세부요소 2) 선호의 이유를 설명하면서 '왜냐하면, ~기 때문에, 그 이유는, 따라서' 등 인과 표현을 사용하여 논리적으로 연결했는가
-  단, 앞서 제시한 내용을 지시한 경우도 인정한다.
-판정: O=세부요소 1과 2 모두 충족, △=둘 중 하나만 충족, X=수행 없음
+상위요소 2. 대면 교육과 비교하여 비대면 교육의 단점 설명하기
+- 1점: 특정 관점에서 비대면 교육 단점을 제시하고, '대면 교육'과 '비대면 교육' 또는 이에 준하는 명시적 표현을 언급하며, 비교 표현으로 차이·대조를 드러냄.
+- 0.5점: 위 세부요소 중 한 가지만 충족함.
+- 0점: 모두 불충족.
 
-과제 수행 점수:
-- 3점: OOO, OO△
-- 2점: O△△, O△X, △△△
-- 1점: OXX, △△X, △XX
-- 0점: XXX
+상위요소 3. 선호 교육 방법에 대한 의견 제시하기
+- 1점: 대면 또는 비대면 중 하나를 명시적으로 선택하고, 인과 표현으로 이유를 논리적으로 연결함. 앞서 제시한 내용을 지시한 경우도 인정함.
+- 0.5점: 선택 또는 이유 중 한 가지만 충족함.
+- 0점: 모두 불충족.
 
-==================================================
-[채점 기준 - 표현]
-상위요소 1: 등급에 맞는 어휘 및 문법 사용하기
-- 세부요소 1) 5급의 어휘와 문법을 사용했는가(각 2개 이상)
-- 세부요소 2) 6급의 어휘와 문법을 사용했는가(각 2개 이상)
-판정: O=세부요소 1과 2 모두 충족, △=둘 중 하나만 충족, X=둘 모두 불충족
+[표현]
+최소 수행 기준: 과제 수행을 1개만 시도했거나 3문장 이하이면 표현은 0점으로 판단한다.
+상위요소 1. 등급에 맞는 어휘 및 문법 사용하기
+- 1점: 5급 어휘와 문법을 각 2개 이상, 6급 어휘와 문법을 각 2개 이상 사용함.
+- 0.5점: 5급 또는 6급 기준 중 한 가지만 충족함.
+- 0점: 모두 불충족.
 
-상위요소 2: 어휘 및 문법을 오류 없이 사용하기
-오류 유형: 음운 오류, 조사 오류, 시제 오류, 어휘 선택 오류, 문장 구조 오류, 연결 표현 오류 등
-판정:
-- O: 서로 다른 유형의 오류 1~2개
-- △: 서로 다른 유형의 오류 3~4개
-- X: 서로 다른 유형의 오류 5개 이상
+상위요소 2. 어휘 및 문법을 오류 없이 사용하기
+- 1점: 서로 다른 유형의 오류가 1~2개이고 의사소통에 방해가 되지 않음.
+- 0.5점: 오류가 3~4개이거나 의사소통 방해 오류가 1개 이상임.
+- 0점: 오류가 5개 이상이거나 의사소통 방해 오류가 2개 이상임.
 
-상위요소 3: 담화의 연결성, 응집성을 위한 표현 사용하기
-- 세부요소 1) '비교하여 설명하기' 위해 '~와/과 달리, ~보다, 반면에, ~에 비해, 그러나' 등 비교 표현을 사용했는가
-- 세부요소 2) '내용을 종합하여 제시하기' 위해 '따라서, 그래서, 그러므로, 결국, 이와 같이, 종합하면, 이런 점에서, 이런 이유로' 등 종합·결론 표현을 1회 이상 사용했는가
-판정: O=세부요소 1과 2 모두 충족, △=둘 중 하나만 충족, X=둘 모두 불충족
+상위요소 3. 주요 기능을 위한 담화 표현 사용하기
+- 1점: 비교 표현과 종합·결론 표현을 모두 사용함.
+- 0.5점: 둘 중 하나만 사용함.
+- 0점: 모두 사용하지 않음.
 
-표현 점수:
-- 3점: OOO, OO△
-- 2점: O△△, O△X, △△△
-- 1점: OXX, △△X, △XX
-- 0점: XXX
+[전달]
+최소 수행 기준: 과제 수행을 1개만 시도했거나 3문장 이하이면 전달은 0점으로 판단한다.
+상위요소 1. 발음 자연성
+- 1점: 전체 발화의 80% 이상이 자연스럽고 대부분 문장이 끊김 없이 이해 가능함.
+- 0.5점: 전체 발화의 40% 이상 80% 미만이 자연스럽고, 일부 부자연스러움이 있으나 전체 내용 이해 가능함.
+- 0점: 40% 미만이 자연스럽고 이해에 지속적으로 방해됨.
 
-==================================================
-[채점 기준 - 전달]
-상위요소 1: 해당 등급의 비모국어 화자의 수준에서 자연스럽게 발음하기
-비모국어 화자임을 고려했을 때 발음이 자연스럽다고 인식되는가
-판정:
-- O: 전체 발화의 80% 이상이 자연스럽다고 인식됨, 대부분 문장이 끊김 없이 이해 가능함
-- △: 전체 발화의 40% 이상, 80% 미만이 자연스럽다고 인식됨, 일부 끊김이나 부자연스러움이 있으나 전체적인 내용은 이해 가능함
-- X: 전체 발화의 40% 미만이 자연스럽다고 인식됨, 이해하는 데 지속적으로 방해가 됨
-
-상위요소 2: 해당 등급의 비모국어 화자의 수준에서 전략적인 요소 활용하기
-비모국어 화자임을 고려했을 때 느린 속도, 소리의 크기 및 높낮이, 더듬거림, 주저함, 반복 말하기, 휴지 등을 지나치거나 부자연스럽게 사용하지 않고 전달을 위해 전략적으로 활용하는가
-판정:
-- O: 전체 발화의 80% 이상이 자연스럽고 전략적이라고 인식됨, 대부분 문장이 끊김 없이 이어짐
-- △: 전체 발화의 40% 이상, 80% 미만이 자연스럽고 전략적이라고 인식됨, 일부 끊김이나 부자연스러움이 있으나 전체적인 내용은 이해 가능함
-- X: 전체 발화의 40% 미만이 자연스럽고 전략적이라고 인식됨, 이해하는 데 지속적으로 방해가 됨
-
-전달 점수:
-- 2점: OO, O△
-- 1점: OX, △△, △X
-- 0점: XX
+상위요소 2. 전략적 요소 활용
+- 1점: 속도, 크기, 억양, 더듬거림, 반복, 휴지 등이 80% 이상 자연스럽고 전략적으로 활용됨.
+- 0.5점: 40% 이상 80% 미만이 자연스럽고 전략적이며 일부 부자연스러움이 있으나 전체 이해 가능함.
+- 0점: 40% 미만이 자연스럽고 이해에 지속적으로 방해됨.
 
 [전사]
 ${transcript}
 
-[출력 형식]
-반드시 JSON만 반환한다. 점수는 정수로 반환한다.
+[출력 규칙]
+각 상위요소 점수는 반드시 1, 0.5, 0 중 하나로 반환한다.
+O, △, X 문자는 절대 사용하지 않는다.
+반드시 JSON만 반환한다.
+
 {
-  "taskScore": 0,
-  "expressionScore": 0,
-  "deliveryScore": 0,
-  "total": 0,
-  "grade": "4급",
-  "taskElement1": "O/△/X 및 근거",
-  "taskElement2": "O/△/X 및 근거",
-  "taskElement3": "O/△/X 및 근거",
-  "expressionElement1": "O/△/X 및 근거",
-  "expressionElement2": "O/△/X 및 근거",
-  "expressionElement3": "O/△/X 및 근거",
-  "deliveryElement1": "O/△/X 및 근거",
-  "deliveryElement2": "O/△/X 및 근거",
+  "taskElement1Score": 0,
+  "taskElement1Reason": "근거",
+  "taskElement2Score": 0,
+  "taskElement2Reason": "근거",
+  "taskElement3Score": 0,
+  "taskElement3Reason": "근거",
+  "expressionElement1Score": 0,
+  "expressionElement1Reason": "근거",
+  "expressionElement2Score": 0,
+  "expressionElement2Reason": "근거",
+  "expressionElement3Score": 0,
+  "expressionElement3Reason": "근거",
+  "deliveryElement1Score": 0,
+  "deliveryElement1Reason": "근거",
+  "deliveryElement2Score": 0,
+  "deliveryElement2Reason": "근거",
   "summary": "총평",
-  "taskEvidence": "과제 수행 점수 근거",
-  "languageEvidence": "표현 점수 근거",
-  "deliveryEvidence": "전달 점수 근거",
-  "cautions": "교사가 검토해야 할 사항"
+  "taskEvidence": "근거",
+  "languageEvidence": "근거",
+  "deliveryEvidence": "근거",
+  "cautions": "검토 사항"
 }
 `;
 
@@ -180,28 +171,46 @@ ${transcript}
     try { result = JSON.parse(response.output_text); }
     catch { result = { summary: response.output_text }; }
 
-    const task = Number(result.taskScore ?? 0);
-    const expr = Number(result.expressionScore ?? result.languageScore ?? 0);
-    const deliv = Number(result.deliveryScore ?? 0);
+    const te1 = Number(result.taskElement1Score ?? 0);
+    const te2 = Number(result.taskElement2Score ?? 0);
+    const te3 = Number(result.taskElement3Score ?? 0);
+    const ee1 = Number(result.expressionElement1Score ?? 0);
+    const ee2 = Number(result.expressionElement2Score ?? 0);
+    const ee3 = Number(result.expressionElement3Score ?? 0);
+    const de1 = Number(result.deliveryElement1Score ?? 0);
+    const de2 = Number(result.deliveryElement2Score ?? 0);
+
+    const taskRaw = te1 + te2 + te3;
+    const exprRaw = ee1 + ee2 + ee3;
+    const delivRaw = de1 + de2;
+
+    const task = areaScoreFromRaw(taskRaw);
+    const expr = areaScoreFromRaw(exprRaw);
+    const deliv = deliveryScoreFromRaw(delivRaw);
     const total = task + expr + deliv;
 
-    result.taskScore = task;
-    result.expressionScore = expr;
-    result.languageScore = expr;
-    result.deliveryScore = deliv;
-    result.total = total;
-    result.grade = total >= 7 ? "7급" : total === 6 ? "6급" : total === 5 ? "5급" : "4급";
-    result.transcript = transcript;
+    Object.assign(result, {
+      taskRawScore: taskRaw,
+      taskScore: task,
+      expressionRawScore: exprRaw,
+      expressionScore: expr,
+      languageScore: expr,
+      deliveryRawScore: delivRaw,
+      deliveryScore: deliv,
+      total,
+      grade: gradeFromTotal(total),
+      transcript
+    });
 
     return {
       statusCode: 200,
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type":"application/json"},
       body: JSON.stringify(result)
     };
   } catch (error) {
     return {
       statusCode: 500,
-      headers: { "Content-Type": "application/json" },
+      headers: {"Content-Type":"application/json"},
       body: JSON.stringify({ error: error.message || String(error) })
     };
   }

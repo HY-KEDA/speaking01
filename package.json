@@ -1,15 +1,11 @@
 {
-  "name": "speaking-test-integrated-final",
-  "version": "3.0.0",
+  "name": "speaking-test-final-time-fixed",
+  "version": "5.0.0",
   "type": "module",
   "scripts": {
-    "dev": "netlify dev",
     "build": "echo static"
   },
   "dependencies": {
     "openai": "^6.0.0"
-  },
-  "devDependencies": {
-    "netlify-cli": "^23.0.0"
   }
 }
