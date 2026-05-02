@@ -132,7 +132,7 @@ export async function handler(event) {
 ${transcript}
 
 [출력 규칙]
-각 상위요소 점수는 반드시 1, 0.5, 0 중 하나로 반환한다.
+각 상위요소 점수는 반드시 1, 0.5, 0 중 하나로 반환한다. 모든 상위요소의 Score와 Reason 필드를 빠짐없이 채운다.
 O, △, X 문자는 절대 사용하지 않는다.
 반드시 JSON만 반환한다.
 
